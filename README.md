@@ -43,17 +43,3 @@ The application supports:
 ```sh
  main.exe
 ```
-
-## Deliverables
-The following items must be submitted:
-1. **Fully functional source code** (well-commented, indented, and organized)
-2. **Video demonstration** (showing execution and explaining features)
-3. **Executable file** (or a downloadable link)
-4. **Windows Installer** (with required libraries and components)
-
-## Evaluation Criteria
-- Code quality and correctness
-- Clarity and organization of the presentation
-- Proper use of the Portuguese language in documentation and video explanation
-- **Late submissions will not be accepted**
-- **The project must be complete, including the source code, otherwise it will not be graded**
