@@ -11,6 +11,7 @@ class Vertice {
         int y() { return e[1]; }
 };
 
+using Point = Vertice;
 
 
 
