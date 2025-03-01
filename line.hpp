@@ -34,8 +34,9 @@ class Line {
             }
         }
 
-        void draw_line_bresertian(SDL_Renderer *renderer) {
-            SDL_SetRenderDrawColor(renderer, color.r(), color.g(), color.b(), color.a());
+        void draw_line_bresertian(SDL_Renderer *renderer, bool erase) {
+            if (!erase) SDL_SetRenderDrawColor(renderer, color.r(), color.g(), color.b(), color.a());
+            else SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
             int x = v[0].x();
             int y = v[0].y();
 
@@ -76,6 +77,7 @@ class Line {
                 c2 = 2 * (dx - dy);
 
                 for(int i = 0; i < dy; i++) {
+                    y += yincr;
                     if(p < 0) p += c1;
                     else {
                         p += c2;

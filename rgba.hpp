@@ -9,6 +9,17 @@ class Rgba {
         int g() { return color[1]; }
         int b() { return color[2]; }
         int a() { return color[3]; }
+
+        Rgba copy_color() {
+            return Rgba(color[0], color[1], color[2], color[3]);
+        }
+
+        void black() {
+            color[0] = 0;
+            color[1] = 0;
+            color[2] = 0;
+            color[3] = 0;
+        }
 };
 
 
