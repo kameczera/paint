@@ -13,13 +13,6 @@ class Rgba {
         Rgba copy_color() {
             return Rgba(color[0], color[1], color[2], color[3]);
         }
-
-        void black() {
-            color[0] = 0;
-            color[1] = 0;
-            color[2] = 0;
-            color[3] = 0;
-        }
 };
 
 

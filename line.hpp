@@ -4,12 +4,12 @@
 #include <cmath>
 #include "vertice.hpp"
 #include "rgba.hpp"
+#include "shape.hpp"
 
-class Line {
+class Line : public Shape {
     public:
         Vertice v[2];
-        Rgba color;
-        Line(Vertice v1, Vertice v2, Rgba color) : v({v1, v2}), color(color) {}
+        Line(Vertice v1, Vertice v2, Rgba color) : Shape(color, 1), v({v1, v2}) {}
 
         void draw_line_DDA(SDL_Renderer *renderer) {
             SDL_SetRenderDrawColor(renderer, color.r(), color.g(), color.b(), color.a());
@@ -34,7 +34,7 @@ class Line {
             }
         }
 
-        void draw_line_bresertian(SDL_Renderer *renderer, bool erase) {
+        void draw(SDL_Renderer *renderer, bool erase) override {
             if (!erase) SDL_SetRenderDrawColor(renderer, color.r(), color.g(), color.b(), color.a());
             else SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
             int x = v[0].x();
@@ -86,6 +86,15 @@ class Line {
                     SDL_RenderDrawPoint(renderer, x, y);
                 }
             }
+        }
+
+        void update_end_point(Vertice end) override {
+            v[1] = end;
+        }
+
+        bool is_defined() override {
+            if(count_clicks == 2) return true;
+            return false;
         }
 };
 

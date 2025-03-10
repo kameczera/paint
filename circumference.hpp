@@ -3,17 +3,19 @@
 
 #include "vertice.hpp"
 #include "rgba.hpp"
+#include "shape.hpp"
+#include <cmath>
 
-class Circumference {
+class Circumference : public Shape {
 public:
     int radius;
     Point center;
-    Rgba color;
+    
+    Circumference(int radius, Point center, Rgba color) : Shape(color, 1), radius(radius), center(center) {}
 
-    Circumference(int radius, Point center, Rgba color) : radius(radius), center(center), color(color) {}
-
-    void draw_circumference(SDL_Renderer *renderer) {
-        SDL_SetRenderDrawColor(renderer, color.r(), color.g(), color.b(), color.a());
+    void draw(SDL_Renderer *renderer, bool erase) override {
+        if(!erase) SDL_SetRenderDrawColor(renderer, color.r(), color.g(), color.b(), color.a());
+        else SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
         int x = 0;
         int y = radius;
         int p = 3 - 2 * radius;
@@ -31,6 +33,10 @@ public:
         }
     }
 
+    void update_end_point(Vertice end) override {
+        radius = sqrt(pow(end.x() - center.x(), 2) + pow(end.y() - center.y(),2));
+    }
+
     void plot_simetrics(int x, int y, int cx, int cy, SDL_Renderer *renderer) {
         SDL_RenderDrawPoint(renderer, cx + x, cy + y);
         SDL_RenderDrawPoint(renderer, cx + x, cy - y);
@@ -40,6 +46,11 @@ public:
         SDL_RenderDrawPoint(renderer, cx + y, cy - x);
         SDL_RenderDrawPoint(renderer, cx - y, cy + x);
         SDL_RenderDrawPoint(renderer, cx - y, cy - x);
+    }
+
+    bool is_defined() override {
+        if(count_clicks == 2) return true;
+        return false;
     }
 };
 

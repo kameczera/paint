@@ -1,10 +1,12 @@
 #include <SDL2/SDL.h>
 #include <iostream>
-#include <stdio.h>
+#include <vector>
 #include "vertice.hpp"
 #include "line.hpp"
-#include "rgba.hpp"
 #include "circumference.hpp"
+#include "rgba.hpp"
+#include "type.hpp"
+#include "square.hpp"
 
 #define SCREEN_WIDTH 1280
 #define SCREEN_HEIGHT 720
@@ -32,62 +34,94 @@ int main(int argc, char **argv)
     }
 
     bool running = true;
-    int click = false;
-    Vertice* init = (Vertice*) malloc(sizeof(Vertice));
-    Vertice* end = (Vertice*) malloc(sizeof(Vertice));
 
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
-    SDL_RenderClear(renderer);
-    Vertice v1 = Vertice(100, 100);
-    Vertice v2 = Vertice(500, 200);
-    Line line = Line(v1, v2, Rgba(255, 255, 255, 255));
-    line.draw_line_bresertian(renderer, false);
-    Vertice v4 = Vertice(500, 100);
-    Line line2 = Line(v4, v1, Rgba(255, 255, 255, 255));
-    line2.draw_line_bresertian(renderer, false);
-    
-    Point p = Point(500, 300);
-    Circumference circ = Circumference(20, p, Rgba(255, 255, 255, 255));
-    circ.draw_circumference(renderer);
-    SDL_RenderPresent(renderer);
+
+    std::vector<Shape*> shapes;
+    Shape* currentShape = nullptr;
+    Type shapeType = LINE;
 
     while (running)
     {
         SDL_Event event;
-        Line l = Line(*init, *end, Rgba(255, 255, 255, 255));
         while (SDL_PollEvent(&event)) {
             if (SDL_QUIT == event.type) {
                 running = false;
             }
-            if (SDL_MOUSEMOTION == event.type) {
-                // if(click == true) {
-                //     int x, y;
-                //     SDL_GetMouseState(&x, &y);
-                //     l.draw_line_bresertian(renderer, true);
-                //     *end = Vertice(x,y);
-                //     l = Line(*init, *end, Rgba(255, 255, 255, 255));
-                //     l.draw_line_bresertian(renderer, false);
-                // }
-                // SDL_RenderPresent(renderer);
-            }
-            if (SDL_MOUSEBUTTONUP == event.type) {
-                click = false;
+            if (SDL_MOUSEMOTION == event.type && currentShape) {
                 int x, y;
                 SDL_GetMouseState(&x, &y);
-                *end = Vertice(x, y);
-                l = Line(*init, *end, Rgba(255, 255, 255, 255));
-                std::cout << init->e[0] << " " << init->e[1] << " " << end->e[0] << " " << end->e[1] << " ";
-                l.draw_line_bresertian(renderer, false);
+                currentShape->update_end_point(Vertice(x, y));
             }
-            if(SDL_MOUSEBUTTONDOWN == event.type) {
-                click = true;
-                int x, y;
-                SDL_GetMouseState(&x, &y);
-                *init = Vertice(x, y);
+            if (SDL_MOUSEBUTTONDOWN == event.type) {
+                if (!currentShape) {
+                    int x, y;
+                    SDL_GetMouseState(&x, &y);
+                    switch (shapeType) {
+                        case LINE:
+                            currentShape = new Line(Vertice(x, y), Vertice(x, y), Rgba(255, 255, 255, 255));
+                            break;
+                        case CIRCLE:
+                            currentShape = new Circumference(0, Point(x, y), Rgba(255, 255, 255, 255));
+                            break;
+                        case SQUARE:
+                            currentShape = new Square(Vertice(x, y), Rgba(255, 255, 255, 255));
+                        default:
+                            break;
+                    }
+                } else {
+                    int x, y;
+                    SDL_GetMouseState(&x, &y);
+                    currentShape->update_end_point(Vertice(x, y));
+                    currentShape->count_clicks++;
+                    if(currentShape->is_defined()) {
+                        shapes.push_back(currentShape);
+                        currentShape = nullptr;
+                    }
+                }
+            }
+            if (event.type == SDL_KEYDOWN) {
+                switch (event.key.keysym.sym) {
+                    case SDLK_c:
+                        shapeType = CIRCLE;
+                        break;
+                    case SDLK_l:
+                        shapeType = LINE;
+                        break;
+                    case SDLK_s:
+                        shapeType = SQUARE;
+                        break;
+                    case SDLK_t:
+                        shapeType = TRIANGLE;
+                        break;
+                    default:
+                        break;
+                }
             }
         }
+
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+        SDL_RenderClear(renderer);
+
+        // Desenha todas as formas
+        for (Shape* shape : shapes) {
+            shape->draw(renderer, false);
+        }
+
+        if (currentShape) {
+            currentShape->draw(renderer, false);
+        }
+
         SDL_RenderPresent(renderer);
     }
+
+    for (Shape* shape : shapes) {
+        delete shape;
+    }
+
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
 
     return 0;
 }
