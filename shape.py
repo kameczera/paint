@@ -10,8 +10,20 @@ class Shape:
     def update_end_point(self, end_point):
         pass
 
-    def is_defined(self):
-        return False
-
     def put_pixel(self, painter, x, y, color=QColor("black")):
         painter.drawPoint(x, y)
+    
+    def translate(self, dx, dy):
+        """Translada a forma em dx e dy."""
+        pass
+
+    def rotate(self, angle, pivot=None):
+        """Rotaciona a forma em torno de um ponto pivot."""
+        pass
+
+    def scale(self, sx, sy, pivot=None):
+        """Escala a forma em relação a um ponto pivot."""
+        pass
+
+    def contains(self, pos):
+        pass

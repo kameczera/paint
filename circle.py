@@ -40,3 +40,8 @@ class Circle(Shape):
     
     def is_defined(self):
         return self.radius > 0
+
+        
+    def contains(self, point):
+        distance = math.hypot(point.x() - self.center.x(), point.y() - self.center.y())
+        return distance <= self.radius
