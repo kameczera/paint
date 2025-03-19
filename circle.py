@@ -2,6 +2,8 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QMenuBar, QAction, QLabel
 from PyQt5.QtGui import QPainter, QColor, QPen
 from PyQt5.QtCore import Qt, QPoint
 from shape import Shape
+import math
+import numpy as np
 
 class Circle(Shape):
     def __init__(self, center, color=QColor(255, 255, 255)):
@@ -17,8 +19,9 @@ class Circle(Shape):
         p = 3 - 2 * self.radius
         self.plot_simetrics(x, y, self.center.x(), self.center.y(), painter)
 
-        while(x < y):
-            if(p < 0): p += 4 * x + 6
+        while x < y:
+            if p < 0:
+                p += 4 * x + 6
             else:
                 p += 4 * (x - y) + 10
                 y -= 1
@@ -41,7 +44,46 @@ class Circle(Shape):
     def is_defined(self):
         return self.radius > 0
 
-        
     def contains(self, point):
         distance = math.hypot(point.x() - self.center.x(), point.y() - self.center.y())
         return distance <= self.radius
+
+    def translate(self, dx, dy):
+        """Translada a forma em dx e dy."""
+        self.center = QPoint(self.center.x() + dx, self.center.y() + dy)
+
+    def rotate(self, angle, pivot=None):
+        """Rotaciona a forma em torno de um ponto pivot."""
+        if pivot is None:
+            pivot = self.center
+
+        rad = math.radians(angle)
+        cos_a, sin_a = math.cos(rad), math.sin(rad)
+
+        # Translação para a origem
+        x, y = self.center.x() - pivot.x(), self.center.y() - pivot.y()
+
+        # Aplicação da matriz de rotação
+        new_x = x * cos_a - y * sin_a
+        new_y = x * sin_a + y * cos_a
+
+        # Translação de volta
+        self.center = QPoint(int(new_x + pivot.x()), int(new_y + pivot.y()))
+
+    def scale(self, sx, sy, pivot=None):
+        """Escala a forma em relação a um ponto pivot."""
+        if pivot is None:
+            pivot = self.center
+
+        # Translação para a origem
+        x, y = self.center.x() - pivot.x(), self.center.y() - pivot.y()
+
+        # Aplicação da matriz de escala
+        new_x = x * sx
+        new_y = y * sy
+
+        # Translação de volta
+        self.center = QPoint(int(new_x + pivot.x()), int(new_y + pivot.y()))
+
+        # Escala o raio
+        self.radius = int(self.radius * sx)

@@ -33,6 +33,7 @@ class MainWindow(QMainWindow):
         polygon_action = QAction("Polígono", self)
 
         cohen_action = QAction("Cohen", self)
+        liang_action = QAction("Liang", self)
         exit_clipping_action = QAction("Sair do modo de recorte", self)
 
         line_action.triggered.connect(lambda: self.set_shape_type("line"))
@@ -45,6 +46,7 @@ class MainWindow(QMainWindow):
         scale_action.triggered.connect(lambda: self.set_transformation_mode("scale"))
         
         cohen_action.triggered.connect(lambda: self.set_clipping_mode("cohen"))
+        liang_action.triggered.connect(lambda: self.set_clipping_mode("liang"))
         exit_clipping_action.triggered.connect(lambda: self.set_clipping_mode(None))
 
         transform_menu.addAction(criation_action)
@@ -57,6 +59,7 @@ class MainWindow(QMainWindow):
         shapes_menu.addAction(polygon_action)
 
         clipping_menu.addAction(cohen_action)
+        clipping_menu.addAction(liang_action)
         clipping_menu.addAction(exit_clipping_action)
 
     def set_transformation_mode(self, mode):
@@ -64,7 +67,7 @@ class MainWindow(QMainWindow):
         self.drawing_area.clipping_mode = None
     
     def set_clipping_mode(self, mode):
-        if(mode == None):
+        if mode is None:
             self.drawing_area.clip_window = None
         self.drawing_area.clipping_mode = mode
         self.drawing_area.transformation_mode = None
@@ -137,6 +140,42 @@ class CohenSutherland:
             return Line(QPoint(int(x1), int(y1)), QPoint(int(x2), int(y2)))
         return None
 
+class LiangBarsky:
+    def __init__(self, x_min, y_min, x_max, y_max):
+        self.x_min = x_min
+        self.y_min = y_min
+        self.x_max = x_max
+        self.y_max = y_max
+
+    def clip_line(self, line):
+        x1, y1 = line.start_point.x(), line.start_point.y()
+        x2, y2 = line.end_point.x(), line.end_point.y()
+        dx = x2 - x1
+        dy = y2 - y1
+        p = [-dx, dx, -dy, dy]
+        q = [x1 - self.x_min, self.x_max - x1, y1 - self.y_min, self.y_max - y1]
+        u1, u2 = 0, 1
+
+        for i in range(4):
+            if p[i] == 0 and q[i] < 0:
+                return None
+            if p[i] != 0:
+                t = q[i] / p[i]
+                if p[i] < 0:
+                    u1 = max(u1, t)
+                else:
+                    u2 = min(u2, t)
+        
+        if u1 > u2:
+            return None
+
+        x1_clip = x1 + u1 * dx
+        y1_clip = y1 + u1 * dy
+        x2_clip = x1 + u2 * dx
+        y2_clip = y1 + u2 * dy
+
+        return Line(QPoint(int(x1_clip), int(y1_clip)), QPoint(int(x2_clip), int(y2_clip)))
+
 class DrawingArea(QWidget):
     def __init__(self):
         super().__init__()
@@ -160,7 +199,7 @@ class DrawingArea(QWidget):
         pen.setWidth(2)
         painter.setPen(pen)
         
-        if(self.clip_window):
+        if self.clip_window:
             for shape in self.clipped_shapes:
                 shape.draw(painter)
         else:
@@ -174,19 +213,22 @@ class DrawingArea(QWidget):
 
         if self.transformation_mode:
             print(self.transformation_mode)
-            if(not self.selected_shape):
+            if not self.selected_shape:
                 self.selected_shape = self.get_shape_at(event.pos())
                 self.last_mouse_pos = event.pos()
             else:
                 self.selected_shape = None
-        elif self.clipping_mode == "cohen":
+        elif self.clipping_mode in ["cohen", "liang"]:
             self.click_points.append(QPoint(event.x(), event.y()))
             if len(self.click_points) == 2:
                 x_min = min(self.click_points[0].x(), self.click_points[1].x())
                 y_min = min(self.click_points[0].y(), self.click_points[1].y())
                 x_max = max(self.click_points[0].x(), self.click_points[1].x())
                 y_max = max(self.click_points[0].y(), self.click_points[1].y())
-                self.clip_window = CohenSutherland(x_min, y_min, x_max, y_max)
+                if self.clipping_mode == "cohen":
+                    self.clip_window = CohenSutherland(x_min, y_min, x_max, y_max)
+                elif self.clipping_mode == "liang":
+                    self.clip_window = LiangBarsky(x_min, y_min, x_max, y_max)
                 self.apply_clipping()
                 self.click_points.clear()
         else:
@@ -227,6 +269,7 @@ class DrawingArea(QWidget):
 
     def apply_clipping(self):
         if self.clip_window:
+            self.clipped_shapes = []
             for shape in self.shapes:
                 if isinstance(shape, Line):
                     clipped_line = self.clip_window.clip_line(shape)
