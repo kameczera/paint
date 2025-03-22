@@ -1,5 +1,5 @@
-from PyQt5.QtWidgets import QApplication, QMainWindow, QAction, QWidget
-from PyQt5.QtGui import QPainter, QColor, QPen
+from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QHBoxLayout, QWidget, QLabel, QComboBox
+from PyQt5.QtGui import QPainter, QColor, QPen, QFont
 from PyQt5.QtCore import Qt, QPoint
 from shape import Shape
 from line import Line
@@ -9,63 +9,81 @@ from polygon import Polygon
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("PyQt Drawing App")
+        self.setWindowTitle("PyQt Stylish Buttons App")
         self.setGeometry(100, 100, 1280, 720)
 
         self.drawing_area = DrawingArea()
-        self.setCentralWidget(self.drawing_area)
+        self.create_buttons()
 
-        self.create_menu()
-    
-    def create_menu(self):
-        menu_bar = self.menuBar()
-        transform_menu = menu_bar.addMenu("Transformações")
-        shapes_menu = menu_bar.addMenu("Formas")
-        clipping_menu = menu_bar.addMenu("Recorte")
-
-        criation_action = QAction("Criação", self)
-        translate_action = QAction("Translação", self)
-        rotate_action = QAction("Rotação", self)
-        scale_action = QAction("Escala", self)
+    def create_buttons(self):
+        button_layout = QVBoxLayout()
+        button_layout.setSpacing(10)
         
-        circle_action = QAction("Circulo", self)
-        line_action = QAction("Reta", self)
-        polygon_action = QAction("Polígono", self)
-
-        cohen_action = QAction("Cohen", self)
-        liang_action = QAction("Liang", self)
-        exit_clipping_action = QAction("Sair do modo de recorte", self)
-
-        line_action.triggered.connect(lambda: self.set_shape_type("line"))
-        circle_action.triggered.connect(lambda: self.set_shape_type("circle"))
-        polygon_action.triggered.connect(lambda: self.set_shape_type("polygon"))
-
-        criation_action.triggered.connect(lambda: self.set_transformation_mode(None))
-        translate_action.triggered.connect(lambda: self.set_transformation_mode("translate"))
-        rotate_action.triggered.connect(lambda: self.set_transformation_mode("rotate"))
-        scale_action.triggered.connect(lambda: self.set_transformation_mode("scale"))
+        def create_button(text, callback):
+            button = QPushButton(text)
+            button.setFont(QFont("Arial", 12, QFont.Bold))
+            button.setStyleSheet(
+                "background-color: #1E90FF; color: white; border-radius: 10px; padding: 10px;"
+                "border: 2px solid #ffffff;"
+            )
+            button.clicked.connect(callback)
+            return button
         
-        cohen_action.triggered.connect(lambda: self.set_clipping_mode("cohen"))
-        liang_action.triggered.connect(lambda: self.set_clipping_mode("liang"))
-        exit_clipping_action.triggered.connect(lambda: self.set_clipping_mode(None))
+        shapes_label = QLabel("Formas")
+        shapes_label.setFont(QFont("Arial", 14, QFont.Bold))
+        shapes_label.setAlignment(Qt.AlignCenter)
+        button_layout.addWidget(shapes_label)
+        
+        button_layout.addWidget(create_button("Reta", lambda: self.set_shape_type("line")))
+        button_layout.addWidget(create_button("Círculo", lambda: self.set_shape_type("circle")))
+        button_layout.addWidget(create_button("Polígono", lambda: self.set_shape_type("polygon")))
 
-        transform_menu.addAction(criation_action)
-        transform_menu.addAction(translate_action)
-        transform_menu.addAction(rotate_action)
-        transform_menu.addAction(scale_action)
+        line_algorithm_label = QLabel("Algoritmo de Reta")
+        line_algorithm_label.setFont(QFont("Arial", 14, QFont.Bold))
+        line_algorithm_label.setAlignment(Qt.AlignCenter)
+        button_layout.addWidget(line_algorithm_label)
+        
+        self.line_algorithm_selector = QComboBox()
+        self.line_algorithm_selector.addItems(["DDA", "Bresenham"])
+        self.line_algorithm_selector.setFont(QFont("Arial", 12))
+        self.line_algorithm_selector.setStyleSheet("padding: 5px; border-radius: 5px;")
+        self.line_algorithm_selector.currentTextChanged.connect(self.set_line_algorithm)
+        button_layout.addWidget(self.line_algorithm_selector)
 
-        shapes_menu.addAction(line_action)
-        shapes_menu.addAction(circle_action)
-        shapes_menu.addAction(polygon_action)
-
-        clipping_menu.addAction(cohen_action)
-        clipping_menu.addAction(liang_action)
-        clipping_menu.addAction(exit_clipping_action)
+        transform_label = QLabel("Transformações")
+        transform_label.setFont(QFont("Arial", 14, QFont.Bold))
+        transform_label.setAlignment(Qt.AlignCenter)
+        button_layout.addWidget(transform_label)
+        
+        button_layout.addWidget(create_button("Criação", lambda: self.set_transformation_mode(None)))
+        button_layout.addWidget(create_button("Translação", lambda: self.set_transformation_mode("translate")))
+        button_layout.addWidget(create_button("Rotação", lambda: self.set_transformation_mode("rotate")))
+        button_layout.addWidget(create_button("Escala", lambda: self.set_transformation_mode("scale")))
+        
+        clipping_label = QLabel("Recorte")
+        clipping_label.setFont(QFont("Arial", 14, QFont.Bold))
+        clipping_label.setAlignment(Qt.AlignCenter)
+        button_layout.addWidget(clipping_label)
+        
+        button_layout.addWidget(create_button("Cohen", lambda: self.set_clipping_mode("cohen")))
+        button_layout.addWidget(create_button("Liang", lambda: self.set_clipping_mode("liang")))
+        button_layout.addWidget(create_button("Sair do modo de recorte", lambda: self.set_clipping_mode(None)))
+        
+        main_layout = QHBoxLayout()
+        main_layout.addLayout(button_layout)
+        main_layout.addWidget(self.drawing_area)
+        
+        container = QWidget()
+        container.setLayout(main_layout)
+        self.setCentralWidget(container)
 
     def set_transformation_mode(self, mode):
         self.drawing_area.transformation_mode = mode
         self.drawing_area.clipping_mode = None
     
+    def set_line_algorithm(self, algorithm):
+        self.drawing_area.set_line_algorithm(algorithm)
+
     def set_clipping_mode(self, mode):
         if mode is None:
             self.drawing_area.clip_window = None
@@ -74,6 +92,113 @@ class MainWindow(QMainWindow):
 
     def set_shape_type(self, shape_type):
         self.drawing_area.shape_type = shape_type
+
+class DrawingArea(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.shapes = []
+        self.click_points = []
+        self.current_shape = None
+        self.shape_type = 'line'
+        self.transformation_mode = None
+        self.clipping_mode = None
+        self.selected_shape = None
+        self.last_mouse_pos = None
+        self.clipped_shapes = []
+        self.clip_window = None
+        self.line_algorithm = "DDA"
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.fillRect(self.rect(), QColor(0, 0, 0))
+        
+        pen = QPen(QColor(255, 255, 255))
+        pen.setWidth(2)
+        painter.setPen(pen)
+        
+        if self.clip_window:
+            for shape in self.clipped_shapes:
+                shape.draw(painter)
+        else:
+            for shape in self.shapes:
+                shape.draw(painter)
+        self.update()
+
+    def mousePressEvent(self, event):
+        if event.y() < 30:
+            return
+
+        if self.transformation_mode:
+            if not self.selected_shape:
+                self.selected_shape = self.get_shape_at(event.pos())
+                self.last_mouse_pos = event.pos()
+            else:
+                self.selected_shape = None
+        elif self.clipping_mode in ["cohen", "liang"]:
+            self.click_points.append(QPoint(event.x(), event.y()))
+            if len(self.click_points) == 2:
+                x_min = min(self.click_points[0].x(), self.click_points[1].x())
+                y_min = min(self.click_points[0].y(), self.click_points[1].y())
+                x_max = max(self.click_points[0].x(), self.click_points[1].x())
+                y_max = max(self.click_points[0].y(), self.click_points[1].y())
+                if self.clipping_mode == "cohen":
+                    self.clip_window = CohenSutherland(x_min, y_min, x_max, y_max)
+                elif self.clipping_mode == "liang":
+                    self.clip_window = LiangBarsky(x_min, y_min, x_max, y_max)
+                self.apply_clipping()
+                self.click_points.clear()
+        else:
+            if not self.current_shape:
+                if self.shape_type == 'line':
+                    self.current_shape = Line(QPoint(event.x(), event.y()))
+                    self.current_shape.set_algorithm(self.line_algorithm)
+                elif self.shape_type == 'circle':
+                    self.current_shape = Circle(QPoint(event.x(), event.y()))
+                else:
+                    self.current_shape = Polygon(QPoint(event.x(), event.y()))
+            elif isinstance(self.current_shape, Polygon) and not self.current_shape.is_defined():
+                self.current_shape.update_end_point(QPoint(event.x(), event.y()))
+            else:
+                self.current_shape.update_end_point(QPoint(event.x(), event.y()))
+                self.shapes.append(self.current_shape)
+                self.current_shape = None
+        self.update()
+
+    def mouseMoveEvent(self, event):
+        if self.transformation_mode and self.selected_shape:
+            dx = event.x() - self.last_mouse_pos.x()
+            dy = event.y() - self.last_mouse_pos.y()
+
+            if self.transformation_mode == "translate":
+                self.selected_shape.translate(dx, dy)
+            elif self.transformation_mode == "rotate":
+                self.selected_shape.rotate(dx)
+            elif self.transformation_mode == "scale":
+                self.selected_shape.scale(1 + dx / 100.0, 1 + dy / 100.0)
+
+            self.last_mouse_pos = event.pos()
+
+    def get_shape_at(self, pos):
+        for shape in self.shapes:
+            if shape.contains(pos):
+                return shape
+        return None
+
+    def apply_clipping(self):
+        if self.clip_window:
+            self.clipped_shapes = []
+            for shape in self.shapes:
+                if isinstance(shape, Line):
+                    clipped_line = self.clip_window.clip_line(shape)
+                    if clipped_line:
+                        self.clipped_shapes.append(clipped_line)
+        self.update()
+
+    def set_line_algorithm(self, algorithm):
+        self.line_algorithm = algorithm
+        if self.current_shape and isinstance(self.current_shape, Line):
+            self.current_shape.set_algorithm(algorithm)
 
 class CohenSutherland:
     INSIDE = 0
@@ -212,7 +337,6 @@ class DrawingArea(QWidget):
             return
 
         if self.transformation_mode:
-            print(self.transformation_mode)
             if not self.selected_shape:
                 self.selected_shape = self.get_shape_at(event.pos())
                 self.last_mouse_pos = event.pos()

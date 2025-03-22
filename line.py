@@ -5,13 +5,21 @@ import math
 import numpy as np
 
 class Line(Shape):
-    def __init__(self, start_point, end_point = None, color=QColor(255, 255, 255)):
+    def __init__(self, start_point, end_point=None, color=QColor(255, 255, 255)):
         super().__init__(color)
-        if(not end_point): end_point = start_point
+        if not end_point:
+            end_point = start_point
         self.start_point = start_point
         self.end_point = end_point
-    
+        self.algorithm = "DDA"
+
     def draw(self, painter):
+        if self.algorithm == "DDA":
+            self.draw_dda(painter)
+        elif self.algorithm == "Bresenham":
+            self.draw_bresenham(painter)
+
+    def draw_dda(self, painter):
         pen = QPen(self.color)
         painter.setPen(pen)
 
@@ -19,18 +27,18 @@ class Line(Shape):
         y = self.start_point.y()
         dx = self.end_point.x() - self.start_point.x()
         dy = self.end_point.y() - self.start_point.y()
-        
+
         xincr = 1 if dx >= 0 else -1
         yincr = 1 if dy >= 0 else -1
         dx = abs(dx)
         dy = abs(dy)
-        
+
         p = 2 * dy - dx if dx > dy else 2 * dx - dy
         c1 = 2 * dy if dx > dy else 2 * dx
         c2 = 2 * (dy - dx) if dx > dy else 2 * (dx - dy)
-        
+
         self.put_pixel(painter, x, y)
-        
+
         if dx > dy:
             for _ in range(dx):
                 x += xincr
@@ -49,13 +57,40 @@ class Line(Shape):
                     p += c2
                     x += xincr
                 self.put_pixel(painter, x, y)
-    
+
+    def draw_bresenham(self, painter):
+        pen = QPen(self.color)
+        painter.setPen(pen)
+
+        x1, y1 = self.start_point.x(), self.start_point.y()
+        x2, y2 = self.end_point.x(), self.end_point.y()
+        dx = abs(x2 - x1)
+        dy = abs(y2 - y1)
+        sx = 1 if x1 < x2 else -1
+        sy = 1 if y1 < y2 else -1
+        err = dx - dy
+
+        while True:
+            self.put_pixel(painter, x1, y1)
+            if x1 == x2 and y1 == y2:
+                break
+            e2 = err * 2
+            if e2 > -dy:
+                err -= dy
+                x1 += sx
+            if e2 < dx:
+                err += dx
+                y1 += sy
+
+    def set_algorithm(self, algorithm):
+        self.algorithm = algorithm
+
     def update_end_point(self, end_point):
         self.end_point = end_point
-    
+
     def is_defined(self):
         return self.start_point != self.end_point
-    
+
     def translate(self, dx, dy):
         translation_matrix = np.array([
             [1, 0, dx],
@@ -64,7 +99,7 @@ class Line(Shape):
         ])
         self.start_point = self.apply_transformation(self.start_point, translation_matrix)
         self.end_point = self.apply_transformation(self.end_point, translation_matrix)
-    
+
     def rotate(self, angle, pivot=None):
         if pivot is None:
             pivot = self.start_point
@@ -94,7 +129,7 @@ class Line(Shape):
 
         self.start_point = self.apply_transformation(self.start_point, transformation_matrix)
         self.end_point = self.apply_transformation(self.end_point, transformation_matrix)
-    
+
     def scale(self, sx, sy, pivot=None):
         if pivot is None:
             pivot = self.start_point
@@ -134,7 +169,7 @@ class Line(Shape):
 
         if x0 == x1 and y0 == y1:
             return math.hypot(x - x0, y - y0) <= threshold
-        
+
         num = abs((y1 - y0) * x - (x1 - x0) * y + x1 * y0 - y1 * x0)
         den = math.hypot(y1 - y0, x1 - x0)
         distance = num / den
